@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interativo: Saúde e Bem-Estar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        .theme-button {
+            transition: all 0.3s ease;
+        }
+        .theme-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .option-button {
+            transition: background-color 0.3s ease;
+        }
+        .selected-option {
+            background-color: #3b82f6 !important; /* Tailwind blue-600 */
+            color: white !important;
+        }
+        .correct-answer-feedback {
+            background-color: #dcfce7; /* Tailwind green-100 */
+            color: #166534; /* Tailwind green-800 */
+            border-left: 4px solid #22c55e; /* Tailwind green-500 */
+        }
+        .incorrect-answer-feedback {
+            background-color: #fee2e2; /* Tailwind red-100 */
+            color: #991b1b; /* Tailwind red-800 */
+            border-left: 4px solid #ef4444; /* Tailwind red-500 */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e5e7eb; /* Tailwind gray-200 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #9ca3af; /* Tailwind gray-400 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* Tailwind gray-500 */
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-gray-800">
+
+    <div id="app-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+
+        <!-- Theme Selection Screen -->
+        <div id="theme-selection-container">
+            <!-- Image updated here -->
+            <img src="https://placehold.co/600x250/60a5fa/ffffff?text=POR+QUE+SERÁ?%0AQuiz&font=lora"
+                 alt="Imagem ilustrativa para o quiz com o texto Por que será?"
+                 class="w-full h-auto max-h-56 object-contain rounded-lg mb-6 "
+                 onerror="this.onerror=null; this.src='https://placehold.co/600x250/cccccc/333333?text=Imagem+Indisponível';">
+            <h1 class="text-3xl font-bold text-center mb-8 text-sky-700">Escolha um Tema do Quiz</h1>
+            <div id="theme-buttons" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Theme buttons will be injected here by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-container" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="quiz-theme-title" class="text-2xl font-semibold text-sky-700">Tema do Quiz</h2>
+                <button id="back-to-themes-btn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">Voltar aos Temas</button>
+            </div>
+            <div id="question-area" class="mb-6">
+                <p id="question-text" class="text-lg font-medium mb-4"></p>
+                <div id="options-container" class="space-y-3">
+                    <!-- Options will be injected here -->
+                </div>
+            </div>
+            <div id="feedback-area" class="p-3 rounded-md my-4 text-sm hidden"></div>
+            <div class="flex justify-between items-center mt-8">
+                <p id="progress-text" class="text-sm text-gray-600"></p>
+                <button id="next-question-btn" class="px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors shadow-md">Próxima Pergunta</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-container" class="hidden text-center">
+            <h2 class="text-3xl font-bold text-sky-700 mb-6">Resultados do Quiz</h2>
+            <p id="score-text" class="text-2xl mb-4"></p>
+            <p id="detailed-score" class="text-lg mb-8"></p>
+            <div class="space-y-4 sm:space-y-0 sm:flex sm:justify-center sm:space-x-4">
+                <button id="restart-quiz-btn" class="w-full sm:w-auto px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors shadow-md">Jogar Novamente (Mesmo Tema)</button>
+                <button id="back-to-themes-results-btn" class="w-full sm:w-auto px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-md">Escolher Outro Tema</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Quiz Data ---
+        const quizData = {
+            "Exercício Físico": [
+                { question: "Quais são alguns dos benefícios de realizar exercícios físicos?", options: ["Manter um bem-estar físico e emocional;", "Aumento da dor muscular e estresse;", "Diminuir a massa muscular."], answer: "Manter um bem-estar físico e emocional;" },
+                { question: "Idosos podem realizar exercícios físicos?", options: ["Não;", "Sim, mas com avaliação médica;", "Sim, quando quiserem."], answer: "Sim, mas com avaliação médica;" },
+                { question: "Caminhar até o mercado e pedalar são formas de realizar exercício físico?", options: ["Não;", "Sim;", "São atividades do dia a dia."], answer: "Sim;" },
+                { question: "O que vou sentir se estiver fazendo exercícios em excesso?", options: ["Dores, tremores e cansaço;", "Disposição física e mental;", "Falta de fome."], answer: "Dores, tremores e cansaço;" },
+                { question: "O que são pessoas sedentárias?", options: ["Aquelas que não realizam atividades físicas com frequência;", "Aquelas que realizam atividades físicas com frequência;", "Aquelas que são saudáveis, praticamente invulneráveis a qualquer doença."], answer: "Aquelas que não realizam atividades físicas com frequência;" },
+                { question: "O que é comum acontecer com pessoas sedentárias?", options: ["Obesidade e diminuição da musculatura;", "Diminuição da gordura corporal;", "Perda de peso."], answer: "Obesidade e diminuição da musculatura;" },
+                { question: "Podemos fazer exercícios na intensidade que acharmos melhor?", options: ["O que importa é a satisfação;", "Não, precisamos adaptar o exercício à nossa condição física atual.", "Sim;"], answer: "Não, precisamos adaptar o exercício à nossa condição física atual." },
+                { question: "É importante consultar um profissional de educação física? Para quê?", options: ["Não, só atrapalha;", "Sim, para adaptar a dieta.", "Sim, para realizar exercícios na intensidade certa e de forma segura;"], answer: "Sim, para realizar exercícios na intensidade certa e de forma segura;" },
+                { question: "Posso realizar caminhada com qualquer calçado?", options: ["Sim, basta não pisar em pedras;", "Não, o ideal é usar um que amortece impactos;", "Sim, basta que sejam “justos” aos pés."], answer: "Não, o ideal é usar um que amortece impactos;" },
+                { question: "A nossa frequência de refeições é modificada pela prática de atividades físicas?", options: ["Sim, geralmente temos mais vontade de comer;", "Não, comemos com a mesma frequência;", "Sim, sentimos menos fome."], answer: "Sim, geralmente temos mais vontade de comer;" },
+                { question: "O que é musculação?", options: ["Exercício de força que usa vários pesos;", "Exercício centrado em usar vários músculos, sem pesos e com vários movimentos;", "Exercício de corrida que prioriza resistência;"], answer: "Exercício de força que usa vários pesos;" },
+                { question: "A musculação pode ser feita por qualquer um?", options: ["Não, idosos não podem fazer;", "Sim, basta ter idade suficiente e acompanhamento profissional;", "Sim, até mesmo sem orientação."], answer: "Sim, basta ter idade suficiente e acompanhamento profissional;" },
+                { question: "É recomendado às pessoas idosas realizar exercícios físicos em que intensidade?", options: ["Exaustiva;", "Moderada;", "Suave."], answer: "Moderada;" },
+                { question: "A prática de atividades físicas promove saúde em quais níveis?", options: ["Somente físico;", "Físico e mental;", "Praticar exercícios não promove saúde."], answer: "Físico e mental;" },
+                { question: "O que é obesidade?", options: ["Uma doença causada somente por alimentação ruim ou desbalanceada;", "Uma doença em que a pessoa tem excesso de gordura;", "Um distúrbio que atinge pessoas que fazem regime frequentemente."], answer: "Uma doença em que a pessoa tem excesso de gordura;" }
+            ],
+            "Pediculose": [
+                { question: "O que é pediculose?", options: ["Uma doença relacionada com coceira e sujeira;", "Uma doença que faz os cabelos caírem;", "Uma doença que ocorre quando temos piolhos."], answer: "Uma doença que ocorre quando temos piolhos." },
+                { question: "Os piolhos só ficam na nossa cabeça?", options: ["Não, podem ser encontrados em outros lugares do corpo;", "Sim;", "Só quando temos cabelos longos."], answer: "Não, podem ser encontrados em outros lugares do corpo;" },
+                { question: "O que vou sentir e ver se tiver piolhos?", options: ["Ardência nos olhos e cortes na pele;", "Coceira intensa e pontos vermelhos na pele;", "Cansaço e pontinhos rosas nos cabelos."], answer: "Coceira intensa e pontos vermelhos na pele;" },
+                { question: "Como posso me livrar dos piolhos?", options: ["Lavando os cabelos com água e sabão.", "Usando remédios e xampus;", "Deixando os cabelos bem longos;"], answer: "Usando remédios e xampus;" },
+                { question: "Como posso evitar de ter piolhos?", options: ["Não compartilhando roupas, toalhas e acessórios de cabelo;", "Me aproximando muito dos amigos;", "Expondo os cabelos ao máximo, evitando usar boné ou gorro."], answer: "Não compartilhando roupas, toalhas e acessórios de cabelo;" },
+                { question: "Qual é o grupo de pessoas que mais pega piolho?", options: ["Crianças;", "Adultos;", "Idosos."], answer: "Crianças;" },
+                { question: "Como os piolhos são transmitidos?", options: ["Por meio de objetos e contato por muito tempo;", "Por meio da água;", "Por meio do solo, com eles pulando em nossa cabeça."], answer: "Por meio de objetos e contato por muito tempo;" },
+                { question: "Animais podem passar piolhos para nós?", options: ["Depende do tipo de animal;", "Sim;", "Não."], answer: "Não." },
+                { question: "Os piolhos podem causar outras doenças?", options: ["Não;", "Sim;", "Só quando estão nas partes íntimas."], answer: "Sim;" },
+                { question: "O que pode facilitar a chegada de piolhos na cabeça?", options: ["Ter caspa;", "Ter cabelos longos;", "Má higiene."], answer: "Ter cabelos longos;" },
+                { question: "O que é o piolho?", options: ["Um inseto;", "Um mamífero;", "Um tipo de aranha."], answer: "Um inseto;" },
+                { question: "Ter piolhos significa que tenho má higiene?", options: ["Piolho não tem relação com higiene;", "Sim, quem lava o cabelo todos os dias não tem piolho;", "Não, mas quem tem cabelo crespo pega com mais facilidade."], answer: "Piolho não tem relação com higiene;" },
+                { question: "Piolhos voam / pulam?", options: ["Sim;", "Não;", "Só os que ficam em nossa cabeça."], answer: "Não;" },
+                { question: "Consigo me livrar dos piolhos só usando remédios e xampus?", options: ["Só se forem usados ao mesmo tempo;", "Sim;", "Não, ainda é preciso retirar com as mãos ou com pente fino."], answer: "Não, ainda é preciso retirar com as mãos ou com pente fino." },
+                { question: "Posso usar venenos ou soluções caseiras para matar os piolhos?", options: ["Só se tiver muitos piolhos;", "Sim.", "Não, nunca."], answer: "Não, nunca." }
+            ],
+            "Bullying": [
+                { question: "O que é Bullying?", options: ["Impedir a presença de agressores no ambiente.", "Ser gentil, sempre evitando desentendimentos;", "Ser agressivo, através de insultos, provocações e violência;"], answer: "Ser agressivo, através de insultos, provocações e violência;" },
+                { question: "Quais são algumas das consequências para quem sofreu bullying?", options: ["Medo, abandono escolar e humilhação;", "Angústia, vergonha e disposição para diferentes atividades.", "Bem-estar, diversão e aumento da interação com os amigos;"], answer: "Medo, abandono escolar e humilhação;" },
+                { question: "Como podemos descobrir se amigos sofrem bullying?", options: ["Perguntando diretamente;", "Observando o comportamento dos colegas;", "Intervindo violentamente."], answer: "Observando o comportamento dos colegas;" },
+                { question: "O bullying acontece apenas no dentro de casa?", options: ["Sim;", "Não, pode acontecer em qualquer lugar;", "Apenas com as meninas."], answer: "Não, pode acontecer em qualquer lugar;" },
+                { question: "O que é Cyberbullying?", options: ["É a atitude de praticar bullying pela internet;", "É o combate de agressores nas redes sociais;", "Uma forma de se tornar popular na internet."], answer: "É a atitude de praticar bullying pela internet;" },
+                { question: "Qual é o papel da família no combate ao bullying?", options: ["Atuar junto das escolas para identificar e dialogar sobre o assunto;", "Denunciar os pais do agressor à polícia;", "Transferir o filho para outra escola."], answer: "Atuar junto das escolas para identificar e dialogar sobre o assunto;" },
+                { question: "Agressão física é pior que agressão moral?", options: ["Ambas as formas de agressão são ruins;", "Sim;", "Não."], answer: "Ambas as formas de agressão são ruins;" },
+                { question: "O bullying é intencional?", options: ["Não;", "Sim, e muita das vezes repetitivo;", "Depende da personalidade de cada um."], answer: "Sim, e muita das vezes repetitivo;" },
+                { question: "O bullying pode prejudicar os estudos?", options: ["Não;", "Só se for duradouro e repetitivo.", "Sim;"], answer: "Sim;" },
+                { question: "O bullying é prejudicial ao crescimento?", options: ["Apenas quando acontece em meio a crianças;", "Não.", "Sim;"], answer: "Sim;" },
+                { question: "Mais algumas das consequências do bullying são:", options: ["Perda da motivação e diminuição do rendimento na escola.", "Indisposição e fraqueza;", "Trauma psicológico e perda da visão;"], answer: "Perda da motivação e diminuição do rendimento na escola." },
+                { question: "Por apelidos nos amigos é um tipo de bullying?", options: ["Sim;", "Não.", "Só se o amigo não gostar;"], answer: "Sim;" },
+                { question: "Podem ser manifestações do bullying:", options: ["Mentiras e segredos;", "Abraços e beijos na bochecha.", "Xingamentos e empurrões;"], answer: "Xingamentos e empurrões;" },
+                { question: "Danificar, furtar ou atirar bens materiais é um tipo de bullying?", options: ["O culpado é aquele que não é cuidadoso com os meus bens.", "Sim, é chamado de bullying material;", "Não;"], answer: "Sim, é chamado de bullying material;" },
+                { question: "Qual é o papel dos professores no combate ao bullying?", options: ["Omitir o bullying;", "Distanciar o agressor e a vítima o máximo possível.", "Conscientizar os pais da vítima e do agressor, informando sobre o assunto;"], answer: "Conscientizar os pais da vítima e do agressor, informando sobre o assunto;" }
+            ],
+            "Intoxicação": [
+                { question: "O que é intoxicação?", options: ["É a sensação de alívio sentida, depois de ir ao banheiro;", "É algo que acontece, quando estamos com o corpo saudável;", "Acontece quando coisas tóxicas entram em contato com o nosso corpo."], answer: "Acontece quando coisas tóxicas entram em contato com o nosso corpo." },
+                { question: "São substâncias que podem causar intoxicação:", options: ["Medicamentos, água sanitária e amaciante;", "Yakult, iogurte e toddynho;", "Refrigerante, activia e nescau."], answer: "Medicamentos, água sanitária e amaciante;" },
+                { question: "O que fazer se eu estiver intoxicado?", options: ["Procurar um hospital imediatamente;", "Beber leite, água ou sucos;", "Ignorar o problema e esperar o corpo eliminar."], answer: "Procurar um hospital imediatamente;" },
+                { question: "Tomar muitos remédios pode causar intoxicação?", options: ["Não;", "Sim;", "Só se forem líquidos."], answer: "Sim;" },
+                { question: "Um alimento pode me deixar intoxicado?", options: ["Sim, é algo chamado intoxicação alimentar;", "Não;", "Depende de cada pessoa."], answer: "Sim, é algo chamado intoxicação alimentar;" },
+                { question: "O que posso sentir ao ter intoxicação alimentar?", options: ["Enjoo e dor de barriga;", "Vontade de comer mais;", "Muita animação."], answer: "Enjoo e dor de barriga;" },
+                { question: "Existe uma forma de \"curar\" uma intoxicação?", options: ["Sim, com uma substância chamada antídoto;", "Não;", "Só com o tempo."], answer: "Sim, com uma substância chamada antídoto;" },
+                { question: "O que uma intoxicação pode alterar no nosso corpo?", options: ["A cor dos nossos olhos;", "Nossos sentimentos, pensamentos e comportamento.", "A maciez dos nossos cabelos."], answer: "Nossos sentimentos, pensamentos e comportamento." },
+                { question: "Intoxicação pode ser causada por animais?", options: ["Não;", "Só se o animal for grande.", "Sim, através do veneno ou peçonha;"], answer: "Sim, através do veneno ou peçonha;" },
+                { question: "O que pode ser feito para evitar uma intoxicação?", options: ["Sempre colocar na boca tudo o que for achado no chão;", "Usar o sabonete no lugar do creme dental.", "Tomar remédios só com a autorização dos pais;"], answer: "Tomar remédios só com a autorização dos pais;" },
+                { question: "O que fazer para evitar a intoxicação alimentar?", options: ["Não comer alimentos com cores ou cheiro fora do normal;", "Não lavar as mãos antes de comer;", "Não lavar os alimentos antes de comer;"], answer: "Não comer alimentos com cores ou cheiro fora do normal;" },
+                { question: "O que devo fazer para me recuperar bem de uma intoxicação?", options: ["Ingerir bastante líquido e procurar atendimento;", "Nunca mais comer lanches na rua.", "Comer até sentir vontade de vomitar;"], answer: "Ingerir bastante líquido e procurar atendimento;" },
+                { question: "Plantas de jardim podem causar intoxicação?", options: ["Não;", "Só se a planta for preta.", "Sim."], answer: "Sim." },
+                { question: "Cremes de pele, rosto e de cabelo podem causar intoxicação?", options: ["Se forem usados todos os dias, não;", "Sim;", "Não."], answer: "Sim;" },
+                { question: "Bebidas podem causar intoxicação?", options: ["Não;", "Só se forem alcoólicas;", "Sim."], answer: "Sim." },
+                { question: "Você acha certo misturar produtos de limpeza?", options: ["Não;", "Só se for para limpar coisas muito sujas.", "Sim."], answer: "Não;" }
+            ],
+            "Sarampo": [
+                { question: "Sarampo é uma doença muito contagiosa, que atinge crianças na maioria dos casos, causando febre alta e manchas vermelhas.", options: ["Sim;", "Não;", "Ambas as respostas."], answer: "Sim;" },
+                { question: "O sarampo é causado pelo que?", options: ["Por um vírus.", "Por uma bactéria;", "Por um protozoário."], answer: "Por um vírus." },
+                { question: "Como o sarampo é transmitido?", options: ["Se cortando com objetos enferrujados;", "De pessoa para pessoa;", "Comendo alimentos estragados."], answer: "De pessoa para pessoa;" },
+                { question: "É normal ter febre alta, manchas e tosse no sarampo?", options: ["Não;", "Sim;", "Só em alguns casos."], answer: "Sim;" },
+                { question: "Para evitar a febre alta e as manchas, é preciso se vacinar?", options: ["Não;", "Sim;", "Só em alguns casos."], answer: "Sim;" },
+                { question: "Tomar a vacina depois que a pessoa pegou sarampo ajuda a curar a doença?", options: ["Sim;", "Não;", "Só se o sarampo for fraco."], answer: "Não;" },
+                { question: "A vacina do sarampo dói?", options: ["Não, porque é aplicada como injeção.", "Não.", "Sim, como uma injeção."], answer: "Sim, como uma injeção." },
+                { question: "Adultos podem pegar sarampo?", options: ["Não;", "Sim;", "Só os idosos."], answer: "Sim;" },
+                { question: "O sarampo pode levar à morte?", options: ["Não;", "Só em casos raros;", "Sim."], answer: "Sim." },
+                { question: "Existe tratamento para o sarampo?", options: ["Sim;", "Não;", "Só para crianças."], answer: "Não;" },
+                { question: "É normal ter dor de cabeça no sarampo?", options: ["Não;", "Sim;", "Só os adultos."], answer: "Sim;" },
+                { question: "O sarampo é grave?", options: ["Sim;", "Não;", "Só quando acontece em bebês."], answer: "Sim;" },
+                { question: "A vacina contra o sarampo é a única forma de prevenção?", options: ["Sim;", "Não;", "Só para crianças."], answer: "Sim;" },
+                { question: "Quantas doses da vacina eu preciso tomar para não pegar sarampo?", options: ["Nenhuma, só preciso tomar quando criança;", "Duas doses;", "Uma dose."], answer: "Duas doses;" },
+                { question: "Caso eu tenha sarampo, o que devo fazer?", options: ["Tomar bastante vitamina C;", "Me hidratar bem, comer canja e ficar descansando em casa;", "Procurar uma Unidade Básica de Saúde."], answer: "Procurar uma Unidade Básica de Saúde." }
+            ],
+            "Dengue": [
+                { question: "O que é dengue ?", options: ["É uma doença causada por um vírus e transmitida por um mosquito;", "É algo que acontece quando estamos com o corpo saudável;", "Acontece quando coisas tóxicas entram em contato com o nosso corpo."], answer: "É uma doença causada por um vírus e transmitida por um mosquito;" },
+                { question: "Como a dengue é transmitida?", options: ["Por baratas;", "Por alimentos contaminados;", "Por mosquitos infectados."], answer: "Por mosquitos infectados." },
+                { question: "O que fazer se eu estiver com dengue?", options: ["Procurar um hospital imediatamente;", "Beber leite, água ou sucos;", "Ignorar o problema e esperar o corpo eliminar."], answer: "Procurar um hospital imediatamente;" },
+                { question: "Como saber se estou com dengue?", options: ["Se eu tiver tosse;", "Se minha garganta doer;", "Só eu tiver febre e dores no corpo."], answer: "Só eu tiver febre e dores no corpo." },
+                { question: "Um alimento pode me deixar com dengue?", options: ["Sim, principalmente as frutas;", "Não;", "Depende de cada pessoa."], answer: "Não;" },
+                { question: "O que posso sentir ao ter dengue?", options: ["Enjoo e dor de barriga;", "Vontade de comer mais;", "Febre e cansaço."], answer: "Febre e cansaço." },
+                { question: "Existe uma forma de \"curar\" a dengue?", options: ["Sim, com uma substância chamada antídoto;", "Não;", "Os sintomas podem ser tratados até você se sentir melhor."], answer: "Os sintomas podem ser tratados até você se sentir melhor." },
+                { question: "A dengue pode ser causada por outros animais?", options: ["Sim, principalmente os cães.", "Não;", "Através de mordidas e arranhões."], answer: "Não;" },
+                { question: "O que pode ser feito para evitar a dengue?", options: ["Não deixar água parada;", "Lavar os alimentos;", "Tomar vacina."], answer: "Não deixar água parada;" },
+                { question: "O que devo fazer para me recuperar bem da dengue?", options: ["Ingerir bastante líquido e procurar uma unidade de saúde;", "Comer até sentir vontade de vomitar;", "Nunca mais comer lanches na rua."], answer: "Ingerir bastante líquido e procurar uma unidade de saúde;" },
+                { question: "Ao beber água contaminada, posso ter dengue?", options: ["Não;", "Sim;", "Só se a água estiver suja."], answer: "Não;" },
+                { question: "Alimentos contaminados podem me deixar com dengue?", options: ["Só os alimentos gordurosos;", "Não;", "Sim."], answer: "Não;" },
+                { question: "Qual dessas medidas não combate a dengue?", options: ["Reservatório de água sempre fechado;", "Água parada;", "Encher os vasos de plantas com areia."], answer: "Água parada;" }
+            ],
+            "Diabetes": [
+                { question: "Diabetes Mellitus é uma doença que altera o metabolismo de_______, os deixando em níveis altos no sangue.", options: ["Colesterol;", "Gordura;", "Açúcar."], answer: "Açúcar." },
+                { question: "É possível ter qualidade de vida com diabetes?", options: ["Sim, basta controlar a doença;", "Não;", "Sim, basta que o paciente não coma qualquer tipo de açúcar pelo resto da vida."], answer: "Sim, basta controlar a doença;" },
+                { question: "Por que a diabetes causa vontade de urinar?", options: ["Pelo aumento da liberação de açúcares estocados no organismo;", "Pelo comprometimento do trabalho dos rins.", "Pela maior ingestão de água;"], answer: "Pelo comprometimento do trabalho dos rins." },
+                { question: "A diabetes causa sede?", options: ["Sim;", "Não;", "Só se o paciente não se hidratar."], answer: "Sim;" },
+                { question: "As pessoas que têm diabetes podem comer doces?", options: ["Não;", "Sim, mas com moderação;", "Só os doces diet."], answer: "Sim, mas com moderação;" },
+                { question: "O que é hipoglicemia?", options: ["Glicose muito alta no sangue;", "Glicose muito baixa no sangue;", "Níveis normais de glicose no sangue."], answer: "Glicose muito baixa no sangue;" },
+                { question: "O que é hiperglicemia?", options: ["Glicose muito alta no sangue;", "Glicose muito baixa no sangue;", "Níveis normais de glicose no sangue."], answer: "Glicose muito alta no sangue;" },
+                { question: "O tratamento para a diabetes do tipo 1 é feito com:", options: ["Exercícios e alimentação saudável;", "Insulina e alimentação saudável;", "Insulina e dieta rigorosa."], answer: "Insulina e alimentação saudável;" },
+                { question: "A diabetes do tipo II é causada por:", options: ["Maus hábitos alimentares e sedentarismo;", "Alimentação saudável e história familiar.", "Envelhecimento;"], answer: "Maus hábitos alimentares e sedentarismo;" },
+                { question: "Por que a diabetes causa fome?", options: ["Porque quem tem diabetes não se alimenta devidamente;", "Porque o diabético pode sentir náuseas e vomitar.", "Porque a glicose não entra nas células do nosso corpo;"], answer: "Porque a glicose não entra nas células do nosso corpo;" }
+            ],
+            "Higiene Pessoal": [
+                { question: "O que é higiene pessoal?", options: ["Limpar o próprio corpo só quando estamos visivelmente sujos;", "Costumes do dia a dia para manter a casa limpa;", "Conjunto de cuidados com o corpo."], answer: "Conjunto de cuidados com o corpo." },
+                { question: "São medidas de higiene pessoal:", options: ["Escovar os dentes, lavar os cabelos, tomar banho e cortar as unhas;", "Andar descalço, lavar apenas os pés antes de dormir e não trocar as roupas;", "Brincar na terra, lavar as mãos antes de se alimentar e cortar o cabelo regularmente."], answer: "Escovar os dentes, lavar os cabelos, tomar banho e cortar as unhas;" },
+                { question: "Preciso tomar banho todos os dias?", options: ["Apenas se eu estiver muito suado e sujo;", "Sim;", "Apenas em dias muito quentes."], answer: "Sim;" },
+                { question: "Preciso lavar as mãos mesmo não vendo sujeira nelas?", options: ["Não.", "Sim;", "Talvez;"], answer: "Sim;" },
+                { question: "Por que é importante usar máscara?", options: ["Para evitar que germes ao nosso redor nos infectem;", "Para não sentir os odores do ambiente;", "Para não mostrar o rosto a desconhecidos."], answer: "Para evitar que germes ao nosso redor nos infectem;" },
+                { question: "O que fazer quando não tenho água e sabão para lavar as mãos?", options: ["Usar álcool em gel;", "Lavar as mãos apenas com água;", "Não tocar em superfícies, pessoas ou alimentos."], answer: "Usar álcool em gel;" },
+                { question: "O que é higiene corporal?", options: ["Conjunto de cuidados direcionados ao corpo, indispensáveis para a saúde;", "Capacidade de manter o corpo saudável, mesmo não cuidando da saúde;", "Conjunto de hábitos higiênicos direcionados aos alimentos."], answer: "Conjunto de cuidados direcionados ao corpo, indispensáveis para a saúde;" },
+                { question: "São medidas de higiene corporal:", options: ["Não cortar as unhas e evitar lavar o cabelo;", "Lavar as mãos, passar desodorante e optar por roupas limpas.", "Negar um abraço e não se alimentar corretamente;"], answer: "Lavar as mãos, passar desodorante e optar por roupas limpas." },
+                { question: "A higiene pessoal é importante para:", options: ["Ficar doente;", "Evitar doenças;", "Comer mais."], answer: "Evitar doenças;" },
+                { question: "Quais são os tipos de higiene?", options: ["Visual e alimentar;", "Pessoal e corporal;", "Física e espiritual."], answer: "Pessoal e corporal;" },
+                { question: "Na higiene corporal, o que deve ser considerado?", options: ["A limpeza do corpo, das mãos e das unhas;", "O estresse, a ansiedade e a tristeza;", "A limpeza dos dentes, da boca e dos alimentos."], answer: "A limpeza do corpo, das mãos e das unhas;" },
+                { question: "Quando devemos lavar as mãos?", options: ["Ao chegar da rua e antes de comer;", "Depois de tomar banho;", "Apenas antes de ir ao banheiro."], answer: "Ao chegar da rua e antes de comer;" },
+                { question: "Como devemos limpar nossos ouvidos?", options: ["Usando uma toalha de banho úmida;", "Usando um cotonete, apenas nas partes externas do ouvido;", "Usando os dedos para retirar a cera."], answer: "Usando um cotonete, apenas nas partes externas do ouvido;" },
+                { question: "O que é higiene alimentar?", options: ["Cuidados com o corpo para evitar doenças;", "É o costume de ingerir alimentos saudáveis;", "Cuidados com a limpeza e cozimento de alimentos."], answer: "Cuidados com a limpeza e cozimento de alimentos." },
+                { question: "São medidas de higiene alimentar:", options: ["Deixar os alimentos fora da geladeira e não filtrar a água;", "Lavar frutas e legumes antes de comer, além de os cozinhar bem;", "Tossir e espirrar sobre os alimentos."], answer: "Lavar frutas e legumes antes de comer, além de os cozinhar bem;" }
+            ],
+            "Mudanças da Puberdade": [
+                { question: "O que é puberdade?", options: ["Momento em que ocorre somente crescimento físico e desenvolvimento das características sexuais;", "Etapa de transição entre a infância e a adolescência que ocorre diversas modificações físicas e mentais;", "Momento que ocorre aumento da produção de hormônios sexuais, que se manterá dessa maneira até a faixa etária idosa (maior de 65 anos)."], answer: "Etapa de transição entre a infância e a adolescência que ocorre diversas modificações físicas e mentais;" },
+                { question: "A puberdade se inicia em que momento para os meninos e as meninas?", options: ["Entre os 12 e 14 anos para os meninos, e entre os 10 e 12 anos para as meninas;", "A partir dos 15 anos de idade para ambos os sexos;", "Ocorre ao mesmo tempo para meninos e meninas."], answer: "Entre os 12 e 14 anos para os meninos, e entre os 10 e 12 anos para as meninas;" },
+                { question: "Por que o adolescente apresenta muitas espinhas?", options: ["Pelo aumento da liberação de açúcares estocados no organismo;", "Pelo comprometimento do trabalho dos rins.", "Pelo aumento da produção de gordura pelas glândulas sebáceas da pele;"], answer: "Pelo aumento da produção de gordura pelas glândulas sebáceas da pele;" },
+                { question: "É normal os pais terem vergonha de conversar com os filhos sobre a puberdade?", options: ["Sim;", "Não;", "Só os pais que são mais conservadores."], answer: "Sim;" },
+                { question: "São mudanças físicas no corpo das meninas durante a puberdade:", options: ["Aumento da musculatura, voz grossa e pelos no rosto;", "Crescimento das mamas, aparecimento de pelos pubianos e primeira menstruação;", "Crescimento do pênis, ombros largos e pelos pubianos."], answer: "Crescimento das mamas, aparecimento de pelos pubianos e primeira menstruação;" },
+                { question: "São mudanças físicas no corpo dos meninos durante a puberdade:", options: ["Crescimento das mamas, aparecimento de pelos pubianos e primeira menstruação;", "Aumento da musculatura, voz grossa e pelos no rosto;", "Crescimento do pênis, ombros largos e pelos pubianos."], answer: "Aumento da musculatura, voz grossa e pelos no rosto;" },
+                { question: "O que é higiene íntima?", options: ["Cuidados com a limpeza das partes íntimas;", "Cuidados com a beleza das partes íntimas;", "Cuidados com a estética das partes íntimas."], answer: "Cuidados com a limpeza das partes íntimas;" },
+                { question: "O que é o odor corporal?", options: ["Um cheiro agradável liberado pelo nosso corpo;", "Um cheiro desagradável liberado pelo nosso corpo.", "Um cheiro fraco liberado pelo nosso corpo;"], answer: "Um cheiro desagradável liberado pelo nosso corpo." }, // Opção C alterada aqui
+                { question: "É normal o corpo ter mais cheiro durante a puberdade?", options: ["Sim;", "Não;", "Só se o adolescente não tiver hábitos de higiene."], answer: "Sim;" },
+                { question: "Qual o papel dos pais e educadores no início da puberdade?", options: ["Ignorar as mudanças para não causar constrangimento ao adolescente;", "Dialogar, ensinar a higiene e dar suporte emocional;", "Deixar o adolescente descobrir tudo sozinho para aprender de forma autônoma."], answer: "Dialogar, ensinar a higiene e dar suporte emocional;" },
+                { question: "É correto usar o mesmo sabonete para o corpo e para as partes íntimas?", options: ["Sim;", "Não;", "Só se for um sabonete neutro."], answer: "Não;" },
+                { question: "O que é a menstruação?", options: ["Descamação do endométrio com sangramento vaginal;", "Sangramento vaginal que ocorre após o uso de anticoncepcional;", "Sangramento uterino irregular."], answer: "Descamação do endométrio com sangramento vaginal;" },
+                { question: "O que é alcoolismo?", options: ["Vontade de beber socialmente, em ocasiões especiais;", "Conduta agressiva de indivíduos que bebem altas quantidades de bebidas alcoólicas.", "Consumo excessivo de bebidas alcoólicas, chegando ao nível da dependência;"], answer: "Consumo excessivo de bebidas alcoólicas, chegando ao nível da dependência;" },
+                { question: "Qual fator pode contribuir para o uso abusivo de álcool pelo adolescente?", options: ["Alto poder aquisitivo;", "Datas comemorativas.", "Uso de álcool pelos pais;"], answer: "Uso de álcool pelos pais;" }
+            ],
+            "Educação no Trânsito": [
+                { question: "O que é trânsito?", options: ["Ato de ir de um lugar para o outro;", "Andar de carro;", "Lugar onde há muitas brigas."], answer: "Ato de ir de um lugar para o outro;" },
+                { question: "Onde o trânsito pode ser encontrado?", options: ["Apenas em cidades grandes;", "Apenas em estradas;", "Em qualquer lugar onde há pessoas se movimentando."], answer: "Em qualquer lugar onde há pessoas se movimentando." },
+                { question: "Quem faz parte do trânsito?", options: ["Apenas motoristas;", "Apenas pedestres;", "Pedestres, motoristas, ciclistas, motociclistas, etc."], answer: "Pedestres, motoristas, ciclistas, motociclistas, etc." },
+                { question: "O que é um pedestre?", options: ["Quem anda de carro;", "Quem anda a pé;", "Quem anda de bicicleta."], answer: "Quem anda a pé;" },
+                { question: "O que é um motorista?", options: ["Quem dirige um veículo;", "Quem anda de ônibus;", "Quem atravessa a rua."], answer: "Quem dirige um veículo;" },
+                { question: "Onde o pedestre deve andar?", options: ["No meio da rua;", "Na calçada;", "Na ciclovia."], answer: "Na calçada;" },
+                { question: "Onde o pedestre deve atravessar a rua?", options: ["Em qualquer lugar;", "Na faixa de pedestre;", "Por trás dos carros."], answer: "Na faixa de pedestre;" },
+                { question: "Para que serve o semáforo?", options: ["Para enfeitar a rua;", "Para controlar o tráfego de veículos e pedestres;", "Para indicar a direção da rua."], answer: "Para controlar o tráfego de veículos e pedestres;" },
+                { question: "Qual o significado da luz verde do semáforo para veículos?", options: ["Pare;", "Atenção;", "Siga."], answer: "Siga." },
+                { question: "Qual o significado da luz amarela do semáforo para veículos?", options: ["Siga;", "Atenção;", "Pare."], answer: "Atenção;" },
+                { question: "Qual o significado da luz vermelha do semáforo para veículos?", options: ["Siga;", "Atenção;", "Pare."], answer: "Pare." },
+                { question: "O que é uma placa de trânsito?", options: ["Um aviso importante no trânsito;", "Um quadro com desenhos;", "Um enfeite na rua."], answer: "Um aviso importante no trânsito;" },
+                { question: "Para que servem as placas de trânsito?", options: ["Para sinalizar as ruas e informar sobre o trânsito;", "Para indicar onde há lanchonetes;", "Para decorar as ruas."], answer: "Para sinalizar as ruas e informar sobre o trânsito;" },
+                { question: "Qual a velocidade recomendada para andar em ruas de bairros?", options: ["60 a 80 km/h;", "40 a 60 km/h;", "20 a 40 km/h."], answer: "20 a 40 km/h." },
+                { question: "É muito importante sempre estar atento a \"seta\" do veículo pois ela sinaliza para onde o motorista quer ir.", options: ["Verdadeiro", "Falso"], answer: "Verdadeiro" }
+            ],
+            "Educação Sexual": [
+                { question: "Qual a importância da educação sexual?", options: ["Educação sexual é a melhor forma de autoconhecimento e promoção do autocuidado;", "Reconhecer o que é o que não é legal;", "Todas as alternativas."], answer: "Todas as alternativas." },
+                { question: "Qual a diferença entre sexualidade e identidade de gênero?", options: ["Um representa a forma como uma pessoa se relaciona com as outras e o outro como essa pessoa se enxerga na sociedade;", "A diferença é quase inexistente visto que são termos muito simples;", "Nenhuma, os dois termos representam a mesma coisa."], answer: "Um representa a forma como uma pessoa se relaciona com as outras e o outro como essa pessoa se enxerga na sociedade;" },
+                { question: "Quais as formas de se evitar uma gravidez?", options: ["Uso de anticoncepcionais, DIU, camisinha;", "Coito interrompido e tabelinha;", "Lavagem após o sexo."], answer: "Uso de anticoncepcionais, DIU, camisinha;" },
+                { question: "Como se pega IST?", options: ["Apenas por meio do sexo;", "Por meio da falta de higiene;", "Por meio do sexo desprotegido."], answer: "Por meio do sexo desprotegido." },
+                { question: "Como evitar uma IST?", options: ["Uso de camisinha masculina ou feminina em todas as relações sexuais;", "Lavando o órgão genital após o sexo;", "Tomando antibióticos antes e depois do sexo."], answer: "Uso de camisinha masculina ou feminina em todas as relações sexuais;" },
+                { question: "O que é consentimento?", options: ["Apenas o \"sim\";", "É sempre o \"sim\", mas só quando a pessoa está totalmente lúcida e ciente do que irá fazer;", "O \"não\" também é consentimento."], answer: "É sempre o \"sim\", mas só quando a pessoa está totalmente lúcida e ciente do que irá fazer;" },
+                { question: "O que é assédio sexual?", options: ["Ação de um homem para com uma mulher;", "É um crime onde a pessoa sofre constrangimento e humilhação com intenção sexual;", "É um elogio desnecessário e indesejável."], answer: "É um crime onde a pessoa sofre constrangimento e humilhação com intenção sexual;" },
+                { question: "O que é uma relação saudável?", options: ["Quando um dos parceiros decide sobre o que é certo ou errado;", "Quando há muito ciúmes e brigas;", "Quando há confiança, respeito, carinho e responsabilidade."], answer: "Quando há confiança, respeito, carinho e responsabilidade." },
+                { question: "O que fazer caso sofra ou presencie alguma situação de assédio?", options: ["Ligar para 190 ou 180;", "Ficar calado;", "Não interferir."], answer: "Ligar para 190 ou 180;" },
+                { question: "Quais são as principais ISTs?", options: ["HIV, gonorreia, clamídia, sífilis, herpes, HPV;", "Asma, rinite e sinusite;", "Dengue, Zika e Chikungunya."], answer: "HIV, gonorreia, clamídia, sífilis, herpes, HPV;" }
+            ],
+            "Vacinação": [
+                { question: "O que é vacina?", options: ["Um tipo de suplemento alimentar derivado do leite bovino;", "Um recurso criado para nos garantir imunidade contra diversos microrganismos (bactérias e vírus, principalmente);", "Um recurso biológico que enfraquece a imunidade."], answer: "Um recurso criado para nos garantir imunidade contra diversos microrganismos (bactérias e vírus, principalmente);" },
+                { question: "Qual é a principal função das vacinas?", options: ["Garantir imunidade de longo prazo para não desenvolver as formas graves de doenças;", "Impedir por completo a ocorrência de infecções;", "Permite nossa locomoção em ambientes fechados, sem usar máscara;"], answer: "Garantir imunidade de longo prazo para não desenvolver as formas graves de doenças;" },
+                { question: "Geralmente, quais são os grupos prioritários para a vacinação?", options: ["Mergulhadores, soldadores e açougueiros;", "Professores, vendedores e religiosos.", "Gestantes, crianças e idosos;"], answer: "Gestantes, crianças e idosos;" },
+                { question: "O que é memória imunológica?", options: ["Ocorre somente quando recebemos o reforço de uma vacina e não sentimos sintomas, como febre, dor e inchaço;", "É a capacidade do sistema imune de combater um microrganismo rapidamente, após contato com ele;", "Um recurso natural que nos lembra de praticar medidas de higiene pessoal."], answer: "É a capacidade do sistema imune de combater um microrganismo rapidamente, após contato com ele;" },
+                { question: "Mesmo que algumas pessoas não se vacinem, por que é importante se vacinar?", options: ["Porque a vacina defenderá pelo menos a mim, me poupando de situações graves;", "Estando vacinado, ganhamos imunidade vitalícia contra vários microrganismos.", "Ao receber a vacina, ela protege a mim mesmo e aqueles que não estão vacinados, uma vez que a transmissão do microrganismo vai ser reduzida."], answer: "Ao receber a vacina, ela protege a mim mesmo e aqueles que não estão vacinados, uma vez que a transmissão do microrganismo vai ser reduzida." },
+                { question: "Em quais locais a vacina deve ser aplicada?", options: ["No glúteo ou na barriga;", "No braço, coxa ou “boca”;", "Na veia ou na superfície da pele."], answer: "No braço, coxa ou “boca”;" },
+                { question: "Posso tomar mais de uma vacina de uma vez?", options: ["Sim;", "Não;", "Apenas se tiver menos de 1 ano de idade."], answer: "Sim;" },
+                { question: "Em que situação devo tomar uma vacina de reforço para tétano?", options: ["Quando torcer um membro (braço ou perna);", "Quando pisar em um prego enferrujado;", "Quando for visitar algum estado do nordeste."], answer: "Quando pisar em um prego enferrujado;" },
+                { question: "Por que é importante receber doses de reforço, como aconteceu na vacina da covid-19?", options: ["Para manter a imunidade contra o microrganismo específico em níveis aceitáveis;", "Para que não existam vacinas sobrando;", "Para fazer o sistema imune se acostumar com o microrganismo, o fazendo não precisar de vacinas para o resto da vida;"], answer: "Para manter a imunidade contra o microrganismo específico em níveis aceitáveis;" },
+                { question: "Com que frequência devemos tomar a vacina do vírus da gripe (Influenza/H1N1)?", options: ["A cada 3 meses;", "A cada 6 meses;", "Todos os anos."], answer: "Todos os anos." },
+                { question: "Qual foi a primeira vacina criada pela humanidade?", options: ["Foi a vacina contra a varíola;", "Foi a vacina contra a gripe;", "Foi a vacina contra a tuberculose."], answer: "Foi a vacina contra a varíola;" },
+                { question: "Qual é a definição correta de soro?", options: ["É uma vacina;", "Substância com anticorpos pré-produzidos e armazenados para combater doenças, venenos ou toxinas;", "É uma solução caseira, criada a partir da mistura entre água, sal e açúcar;"], answer: "Substância com anticorpos pré-produzidos e armazenados para combater doenças, venenos ou toxinas;" },
+                { question: "Por que existe a recomendação de colocar gelo no local de aplicação da vacina;", options: ["Para reduzir o inchaço;", "Para reduzir a dor;", "Ambas alternativas estão corretas."], answer: "Ambas alternativas estão corretas." }
+            ],
+            "ISTs": [ 
+                { question: "Qual das ISTs citadas é causada por uma bactéria?", options: ["Herpes genital;", "Sífilis;", "HIV."], answer: "Sífilis;" },
+                { question: "Qual IST tem transmissão através do contato da pele?", options: ["Gonorreia;", "HPV;", "Clamídia."], answer: "HPV;" },
+                { question: "Qual das ISTs listadas pode ser prevenida com uma vacina?", options: ["Candidíase.", "Hepatite B;", "Tricomoníase;"], answer: "Hepatite B;" },
+                { question: "Quais são os principais sintomas da gonorreia e da clamídia?", options: ["Tosse, espirros e dor de garganta;", "Corrimento vaginal ou uretral, dor ao urinar e dor abdominal;", "Febre, calafrios e dores musculares."], answer: "Corrimento vaginal ou uretral, dor ao urinar e dor abdominal;" },
+                { question: "Quais são as formas de tratamento para a sífilis?", options: ["Antibióticos;", "Remédios caseiros;", "Chás e produtos naturais."], answer: "Antibióticos;" },
+                { question: "O que é HIV?", options: ["Um tipo de gripe;", "Um vírus que ataca o sistema imunológico;", "Uma bactéria que causa infecções de pele."], answer: "Um vírus que ataca o sistema imunológico;" },
+                { question: "Qual a diferença entre HIV e AIDS?", options: ["Não há diferença, são a mesma coisa;", "HIV é o vírus, e AIDS é a doença causada pelo HIV quando o sistema imunológico está comprometido;", "AIDS é o vírus, e HIV é a doença."], answer: "HIV é o vírus, e AIDS é a doença causada pelo HIV quando o sistema imunológico está comprometido;" },
+                { question: "Como a herpes genital é transmitida?", options: ["Apenas pelo contato sexual desprotegido;", "Através do contato da pele com lesões de alguém infectado, geralmente durante o sexo vaginal, anal ou oral;", "Através do compartilhamento de objetos pessoais."], answer: "Através do contato da pele com lesões de alguém infectado, geralmente durante o sexo vaginal, anal ou oral;" },
+                { question: "Quais são os sintomas comuns da herpes genital?", options: ["Dor de cabeça e febre;", "Lesões (bolhas ou feridas) nos órgãos genitais, coceira e dor;", "Tosse persistente e congestão nasal."], answer: "Lesões (bolhas ou feridas) nos órgãos genitais, coceira e dor;" },
+                { question: "A herpes genital tem cura?", options: ["Sim, com tratamento adequado;", "Não, mas os sintomas podem ser controlados com medicação;", "Apenas com cirurgia."], answer: "Não, mas os sintomas podem ser controlados com medicação;" },
+                { question: "O que é o HPV?", options: ["Um vírus que causa verrugas e pode levar ao câncer;", "Uma bactéria que causa infecções respiratórias;", "Um tipo de fungo que causa infecções de pele."], answer: "Um vírus que causa verrugas e pode levar ao câncer;" },
+                { question: "Qual é a diferença entre herpes genital e outras ISTs?", options: ["Cada IST é causada por um tipo específico de vírus e pode ter sintomas e tratamentos diferentes.", "Todas as ISTs têm os mesmos sintomas e tratamentos;", "O vírus da herpes genital, corporal e labial são os mesmos;"], answer: "Cada IST é causada por um tipo específico de vírus e pode ter sintomas e tratamentos diferentes." },
+                { question: "Quais são os sintomas do cancro mole?", options: ["Feridas dolorosas, úlceras e inchaço são sintomas comuns do cancro mole;", "Febre, tosse e dor de cabeça são sintomas do cancro mole.", "Coceira na pele e olhos vermelhos são os sintomas do cancro mole;"], answer: "Feridas dolorosas, úlceras e inchaço são sintomas comuns do cancro mole;" }
+            ],
+             "Sífilis": [
+                { question: "A sífilis é uma doença causada por:", options: ["Um vírus;", "Uma bactéria;", "Um parasita."], answer: "Uma bactéria;" },
+                { question: "Não é uma forma de transmissão da sífilis:", options: ["Através do leite materno de uma mãe infectada;", "O contato direto com sangue e feridas;", "Através de relações sexuais sem proteção."], answer: "Através do leite materno de uma mãe infectada;" },
+                { question: "A sífilis é uma doença grave que não tem tratamento.", options: ["Verdadeiro;", "Falso.", "Não sei."], answer: "Falso." },
+                { question: "A sífilis não pode ser transmitida para o bebê durante a gestação.", options: ["Verdadeiro;", "Falso.", "Não sei."], answer: "Falso." },
+                { question: "As pessoas que têm sífilis podem apresentar os seguintes sintomas:", options: ["Feridas e manchas na pele e mucosas;", "Dificuldade para respirar e dores de cabeça;", "Perda de apetite e tontura."], answer: "Feridas e manchas na pele e mucosas;" },
+                { question: "A sífilis é uma doença que só atinge as pessoas uma única vez.", options: ["Verdadeiro;", "Falso.", "Não sei."], answer: "Falso." },
+                { question: "A sífilis é considerada a “grande imitadora” porque:", options: ["Ela pode se esconder por muitos anos no corpo;", "Seus sintomas podem ser parecidos com os de outras doenças;", "Ela imita outros vírus."], answer: "Seus sintomas podem ser parecidos com os de outras doenças;" },
+                { question: "O tratamento para a sífilis é feito com:", options: ["Injeções de benzetacil (penicilina);", "Remédios caseiros;", "Chás."], answer: "Injeções de benzetacil (penicilina);" },
+                { question: "Se a gestante não fizer o tratamento da sífilis, o bebê pode nascer com sífilis congênita - Quais são os sintomas da sífilis congênita?", options: ["Feridas na pele, problemas nos ossos, surdez, cegueira, convulsões e óbito;", "Tosse, espirros e dor de garganta;", "Febre e dor de cabeça."], answer: "Feridas na pele, problemas nos ossos, surdez, cegueira, convulsões e óbito;" },
+                { question: "Qual o melhor método para prevenção da sífilis?", options: ["Usar camisinha em todas as relações sexuais;", "Tomar anticoncepcional;", "Lavar os órgãos genitais após a relação sexual."], answer: "Usar camisinha em todas as relações sexuais;" },
+                { question: "É necessário que o parceiro também faça o tratamento da sífilis, se a pessoa for diagnosticada?", options: ["Não, apenas a pessoa diagnosticada precisa de tratamento;", "Sim, para evitar reinfecção e interromper a cadeia de transmissão;", "Só se o parceiro também apresentar sintomas."], answer: "Sim, para evitar reinfecção e interromper a cadeia de transmissão;" },
+                { question: "Pessoas com sífilis têm maior probabilidade de contrair HIV.", options: ["Verdade;", "Mito.", "Não sei."], answer: "Verdade;" },
+                { question: "Relação sexual entre mulheres não é capaz de transmitir a sífilis.", options: ["Verdade;", "Mito.", "Não sei."], answer: "Mito." }
+            ],
+            "Saúde Mental": [
+                { question: "Qual é o conceito de Cyberbullying?", options: ["O Cyberbullying é a prática de atividades virtuais por meio de aplicativos pedagógicos.", "O Cyberbullying é a prática de bullying por meio de ambientes virtuais, como redes sociais e aplicativos.", "O Cyberbullying é a prática das linguagens de programação."], answer: "O Cyberbullying é a prática de bullying por meio de ambientes virtuais, como redes sociais e aplicativos." },
+                { question: "Quais são os impactos na relação entre redes sociais e saúde mental?", options: ["Entre estes impactos temos a ansiedade, depressão e sensação de isolamento.", "Entre estes impactos temos o estímulo cognitivo, aumento de produtividade e felicidade.", "Entre estes impactos temos a facilidade de socialização e a prática de cyberbullying."], answer: "Entre estes impactos temos a ansiedade, depressão e sensação de isolamento." },
+                { question: "Quais os benefícios da relação entre redes sociais e saúde mental?", options: ["Aumento de ansiedade e depressão.", "Aumento do isolamento social e problemas de sono.", "Facilidade de socialização, senso de comunidade, apoio social e acesso a informações."], answer: "Facilidade de socialização, senso de comunidade, apoio social e acesso a informações." },
+                { question: "Como as redes sociais podem impactar a saúde mental de crianças e adolescentes?", options: ["Impactam de forma positiva, gerando muitos amigos e felicidade.", "O uso excessivo pode levar a problemas como ansiedade, depressão, cyberbullying, insônia e diminuição do rendimento escolar.", "Não impactam, pois não influenciam no desenvolvimento psicológico de crianças e adolescentes."], answer: "O uso excessivo pode levar a problemas como ansiedade, depressão, cyberbullying, insônia e diminuição do rendimento escolar." },
+                { question: "Quais os comportamentos mais comuns quando o uso de telas se torna excessivo?", options: ["Não querer comer, assistir televisão por muito tempo, ter medo de sair de casa.", "Preferir dormir e praticar esportes ao invés de usar telas.", "Desinteresse em atividades antes prazerosas, irritabilidade e agressividade, problemas de sono."], answer: "Desinteresse em atividades antes prazerosas, irritabilidade e agressividade, problemas de sono." },
+                { question: "Qual o melhor momento para uma criança ter o seu primeiro celular?", options: ["Quando for adolescente, para que possa usar as redes sociais.", "Não existe idade específica, mas é importante ter em mente que quanto mais tarde a criança for introduzida à tecnologia, melhor.", "Quando nascer, para que ela possa se acostumar com as telas desde cedo."], answer: "Não existe idade específica, mas é importante ter em mente que quanto mais tarde a criança for introduzida à tecnologia, melhor." },
+                { question: "Qual o tempo de tela recomendado para crianças e adolescentes?", options: ["É livre, sem tempo limite.", "Recomenda-se um tempo limitado, geralmente de 1 a 2 horas por dia, com pausas regulares.", "O tempo que a criança ou adolescente desejar."], answer: "Recomenda-se um tempo limitado, geralmente de 1 a 2 horas por dia, com pausas regulares." },
+                { question: "O uso de telas em excesso, leva a problemas de visão, fadiga ocular e distúrbios do sono em crianças e adolescentes.", options: ["Verdadeiro", "Falso"], answer: "Verdadeiro" },
+                { question: "O nome da luz emitida por telas que pode afetar o sono se chama:", options: ["Luz amarela", "Luz azul", "Luz branca"], answer: "Luz azul" },
+                { question: "Sobre a inteligência artificial, qual é a verdadeira?", options: ["Ela sempre possui respostas corretas;", "Ela pode ser uma boa ferramenta para estudar;", "Ela substitui a capacidade de decisão e criação do ser humano."], answer: "Ela pode ser uma boa ferramenta para estudar;" }
+            ]
+        };
+
+        // --- DOM Elements ---
+        const themeSelectionContainer = document.getElementById('theme-selection-container');
+        const themeButtonsContainer = document.getElementById('theme-buttons');
+        const quizContainer = document.getElementById('quiz-container');
+        const quizThemeTitle = document.getElementById('quiz-theme-title');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const progressText = document.getElementById('progress-text');
+        const resultsContainer = document.getElementById('results-container');
+        const scoreText = document.getElementById('score-text');
+        const detailedScoreText = document.getElementById('detailed-score');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        const backToThemesBtn = document.getElementById('back-to-themes-btn');
+        const backToThemesResultsBtn = document.getElementById('back-to-themes-results-btn');
+        const feedbackArea = document.getElementById('feedback-area');
+
+        // --- Quiz State ---
+        let currentTheme = '';
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questions = [];
+        let selectedOption = null; // To store the button element of the selected option
+
+        // --- Functions ---
+
+        // Function to shuffle an array (Fisher-Yates shuffle)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+
+        function loadThemes() {
+            themeButtonsContainer.innerHTML = ''; // Clear existing buttons
+            Object.keys(quizData).forEach(theme => {
+                const button = document.createElement('button');
+                button.textContent = theme;
+                button.classList.add('theme-button', 'w-full', 'bg-sky-600', 'text-white', 'p-4', 'rounded-lg', 'font-semibold', 'text-left', 'shadow-md', 'hover:bg-sky-700');
+                button.onclick = () => startQuiz(theme);
+                themeButtonsContainer.appendChild(button);
+            });
+            showScreen('themes');
+        }
+
+        function startQuiz(theme) {
+            currentTheme = theme;
+            questions = [...quizData[theme]]; // Create a copy to shuffle if needed
+            shuffleArray(questions); // Shuffle questions for variety
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedOption = null;
+            quizThemeTitle.textContent = `Tema: ${currentTheme}`;
+            showScreen('quiz');
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const questionData = questions[currentQuestionIndex];
+                questionText.textContent = questionData.question;
+                optionsContainer.innerHTML = '';
+                selectedOption = null; // Reset selected option for the new question
+                feedbackArea.classList.add('hidden');
+                feedbackArea.textContent = '';
+
+                // Shuffle options for each question
+                const shuffledOptions = [...questionData.options];
+                shuffleArray(shuffledOptions);
+
+                const optionLetters = ['A', 'B', 'C', 'D']; // Up to 4 options
+
+                shuffledOptions.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    // Display with letter prefix, e.g., "A - Option Text"
+                    button.innerHTML = `<span class="font-bold mr-2">${optionLetters[index]} -</span> ${option}`;
+                    button.classList.add('option-button', 'w-full', 'text-left', 'p-3', 'border', 'border-gray-300', 'rounded-lg', 'hover:bg-sky-100', 'hover:border-sky-400', 'focus:outline-none', 'focus:ring-2', 'focus:ring-sky-500');
+                    button.dataset.optionValue = option; // Store original option value
+                    button.onclick = () => selectOption(button, option);
+                    optionsContainer.appendChild(button);
+                });
+
+                progressText.textContent = `Pergunta ${currentQuestionIndex + 1} de ${questions.length}`;
+                nextQuestionBtn.textContent = 'Confirmar Resposta';
+                nextQuestionBtn.disabled = true; // Disabled until an option is selected
+            } else {
+                showResults();
+            }
+        }
+
+        function selectOption(buttonElement, optionValue) {
+            // Remove 'selected-option' from previously selected button if any
+            if (selectedOption) {
+                selectedOption.classList.remove('selected-option');
+                selectedOption.classList.add('hover:bg-sky-100');
+            }
+            // Add 'selected-option' to the new_old_button
+            buttonElement.classList.add('selected-option');
+            buttonElement.classList.remove('hover:bg-sky-100');
+            selectedOption = buttonElement; // Store the currently selected button element
+            nextQuestionBtn.disabled = false; // Enable confirm button
+        }
+
+
+        function handleNextQuestion() {
+            if (!selectedOption) return; // Should not happen if button is enabled correctly
+
+            const userAnswer = selectedOption.dataset.optionValue;
+            const correctAnswer = questions[currentQuestionIndex].answer;
+
+            // Disable option buttons after confirming
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+                button.classList.remove('hover:bg-sky-100', 'hover:border-sky-400'); // Remove hover effects
+                 // Highlight the correct answer
+                if (button.dataset.optionValue === correctAnswer) {
+                    button.classList.add('bg-green-200', 'border-green-500');
+                }
+            });
+
+
+            if (userAnswer === correctAnswer) {
+                score++;
+                feedbackArea.textContent = 'Resposta Correta!';
+                feedbackArea.className = 'p-3 rounded-md my-4 text-sm correct-answer-feedback';
+            } else {
+                feedbackArea.textContent = `Resposta Incorreta. A resposta correta era: ${correctAnswer}`;
+                feedbackArea.className = 'p-3 rounded-md my-4 text-sm incorrect-answer-feedback';
+                 // If user was wrong, also highlight their wrong choice in red
+                if (selectedOption.dataset.optionValue !== correctAnswer) {
+                    selectedOption.classList.remove('selected-option'); // remove blue
+                    selectedOption.classList.add('bg-red-200', 'border-red-500', 'text-gray-800');
+                }
+            }
+            feedbackArea.classList.remove('hidden');
+            nextQuestionBtn.textContent = 'Próxima Pergunta';
+
+            // Change button behavior to go to next question after showing feedback
+            nextQuestionBtn.onclick = () => {
+                currentQuestionIndex++;
+                selectedOption = null; // Reset for next question
+                feedbackArea.classList.add('hidden'); // Hide feedback for next question
+                Array.from(optionsContainer.children).forEach(button => button.disabled = false); // Re-enable options
+                displayQuestion();
+                nextQuestionBtn.onclick = handleNextQuestion; // Reset to confirm behavior
+            };
+        }
+
+
+        function showResults() {
+            scoreText.textContent = `Sua Pontuação: ${score} de ${questions.length}`;
+            const percentage = ((score / questions.length) * 100).toFixed(1);
+            detailedScoreText.textContent = `Você acertou ${percentage}% das perguntas.`;
+            showScreen('results');
+        }
+
+        function showScreen(screenName) {
+            themeSelectionContainer.classList.add('hidden');
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+
+            if (screenName === 'themes') {
+                themeSelectionContainer.classList.remove('hidden');
+            } else if (screenName === 'quiz') {
+                quizContainer.classList.remove('hidden');
+            } else if (screenName === 'results') {
+                resultsContainer.classList.remove('hidden');
+            }
+        }
+
+        // --- Event Listeners ---
+        nextQuestionBtn.addEventListener('click', handleNextQuestion);
+        restartQuizBtn.addEventListener('click', () => startQuiz(currentTheme)); // Restart with the same theme
+        backToThemesBtn.addEventListener('click', loadThemes);
+        backToThemesResultsBtn.addEventListener('click', loadThemes);
+
+
+        // --- Initial Load ---
+        loadThemes();
+    </script>
+
+</body>
+</html>
